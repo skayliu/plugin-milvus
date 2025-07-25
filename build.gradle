@@ -28,7 +28,7 @@ java {
 }
 
 group = "io.kestra.plugin"
-description = 'Plugin template for Kestra'
+description = 'Plugin Milvus for Kestra'
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
@@ -49,6 +49,9 @@ dependencies {
     annotationProcessor group: "io.kestra", name: "processor", version: kestraVersion
     compileOnly group: "io.kestra", name: "core", version: kestraVersion
     compileOnly group: "io.kestra", name: "script", version: kestraVersion
+
+    // libs included in the final jar
+    api group: 'io.milvus', name: 'milvus-sdk-java', version: '2.5.11'
 }
 
 
@@ -172,8 +175,8 @@ jar {
     manifest {
         attributes(
                 "X-Kestra-Name": project.name,
-                "X-Kestra-Title": "Template",
-                "X-Kestra-Group": project.group + ".templates",
+                "X-Kestra-Title": "milvus",
+                "X-Kestra-Group": project.group + ".milvus",
                 "X-Kestra-Description": project.description,
                 "X-Kestra-Version": project.version
         )

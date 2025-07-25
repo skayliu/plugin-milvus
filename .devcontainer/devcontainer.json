@@ -1,11 +1,13 @@
 {
-  "name": "plugin-template",
+  "name": "plugin-milvus",
   "build": {
     "context": ".",
     "dockerfile": "Dockerfile"
   },
-  "workspaceFolder": "/workspaces/plugin-template",
-  "forwardPorts": [8080],
+  "workspaceFolder": "/workspaces/plugin-milvus",
+  "forwardPorts": [
+    8080
+  ],
   "customizations": {
     "vscode": {
       "settings": {
