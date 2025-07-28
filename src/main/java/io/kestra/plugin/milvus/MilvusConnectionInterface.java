@@ -20,11 +20,8 @@ public interface MilvusConnectionInterface {
           """
               This can be used as a recommended alternative to setting user and password separately.
               When setting this field, notice that:
-              A valid token should be a pair of username and password used to access the target cluster, \
-              joined by a colon (:). For example, you can set this to `root:Milvus`, \
-              which is the default credential of the root user.
-              Use this if authentication has been enabled on the target Milvus instance. \
-              To enable authentication, refer to Authenticate User Access.
+                  A valid token should be a pair of username and password used to access the target cluster, joined by a colon (:). For example, you can set this to `root:Milvus`, which is the default credential of the root user.
+                  Use this if authentication has been enabled on the target Milvus instance. To enable authentication, refer to Authenticate User Access.
           """)
   Property<String> getToken();
 
@@ -32,8 +29,7 @@ public interface MilvusConnectionInterface {
       title = "A valid username used to connect to the specified Milvus instance.",
       description =
           """
-              Use this if authentication has been enabled on the target Milvus instance. \
-              To enable authentication, refer to Authenticate User Access.
+              Use this if authentication has been enabled on the target Milvus instance. To enable authentication, refer to Authenticate User Access.
               This should be used along with password.
           """)
   Property<String> getUserName();
@@ -42,9 +38,8 @@ public interface MilvusConnectionInterface {
       title = "A valid password used to connect to the specified Milvus instance.",
       description =
           """
-              Use this if authentication has been enabled on the target Milvus instance. \
-              To enable authentication, refer to Authenticate User Access.
-              This should be used along with user.
+              Use this if authentication has been enabled on the target Milvus instance. To enable authentication, refer to Authenticate User Access.
+              This should be used along with username.
           """)
   Property<String> getPassword();
 
