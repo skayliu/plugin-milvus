@@ -3,6 +3,7 @@ package io.kestra.plugin.milvus;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.milvus.v2.client.MilvusClientV2;
@@ -71,9 +72,18 @@ public class DatabaseCreate extends MilvusConnection
   private String databaseName;
 
   @Schema(
-      title =
-          "The properties of the database, such as \"database.replica.number\", \"database.resource_groups\".")
-  private io.kestra.core.models.property.Property<Map<String, String>> databaseProperties;
+      title = "The properties of the database, such as replica number, resource groups.",
+      description =
+          """
+              The possible database properties are as follows:
+                  database.replica.number - Number of replicas for the database.
+                  database.resource_groups - Resource groups dedicated to the database.
+                  database.diskQuota.mb - Disk quota allocated to the database in megabytes (MB).
+                  database.max.collections - Maximum number of collections allowed in the database.
+                  database.force.deny.writing - Whether to deny all write operations in the database.
+                  database.force.deny.reading -  Whether to deny all read operations in the database.
+          """)
+  private Property<Map<String, String>> properties;
 
   @Override
   public Output run(RunContext runContext) throws Exception {
@@ -81,13 +91,13 @@ public class DatabaseCreate extends MilvusConnection
 
     String renderedDatabaseName = runContext.render(databaseName);
 
-    Map<String, String> properties =
-        runContext.render(databaseProperties).asMap(String.class, String.class);
+    Map<String, String> renderedProperties =
+        runContext.render(properties).asMap(String.class, String.class);
 
     CreateDatabaseReq createDatabaseReq =
         CreateDatabaseReq.builder()
             .databaseName(renderedDatabaseName)
-            .properties(properties)
+            .properties(renderedProperties)
             .build();
 
     client.createDatabase(createDatabaseReq);
