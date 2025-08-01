@@ -1,13 +1,13 @@
-package io.kestra.plugin.milvus;
+package io.kestra.plugin.milvus.database;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.milvus.MilvusConnection;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.database.response.ListDatabasesResp;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -29,7 +29,7 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: databases_list
-                    type: io.kestra.plugin.milvus.DatabasesList
+                    type: io.kestra.plugin.milvus.database.ListDatabases
                     url: "http://localhost:19530"
               """),
       @Example(
@@ -42,23 +42,26 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: databases_list
-                    type: io.kestra.plugin.milvus.DatabasesList
+                    type: io.kestra.plugin.milvus.database.ListDatabases
                     url: "https://cluster-id.serverless.cluster-region.cloud.zilliz.com"
                     token: "{{ secret('MILIVUS_API_KEY') }}"
               """)
     })
-public class DatabasesList extends MilvusConnection implements RunnableTask<DatabasesList.Output> {
+public class ListDatabases extends MilvusConnection implements RunnableTask<ListDatabases.Output> {
 
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
+    try {
+      ListDatabasesResp listDatabasesResp = client.listDatabases();
+      java.util.List<String> dbNames = listDatabasesResp.getDatabaseNames();
 
-    ListDatabasesResp listDatabasesResp = client.listDatabases();
-    List<String> dbNames = listDatabasesResp.getDatabaseNames();
+      runContext.logger().info("Database {} is being listed.", dbNames);
 
-    runContext.logger().info("Database {} is being listed.", dbNames);
-
-    return Output.builder().dbNames(dbNames).build();
+      return Output.builder().dbNames(dbNames).build();
+    } finally {
+      client.close();
+    }
   }
 
   @Getter
@@ -66,6 +69,6 @@ public class DatabasesList extends MilvusConnection implements RunnableTask<Data
   public static class Output implements io.kestra.core.models.tasks.Output {
 
     @Schema(title = "Output a list of all database names.")
-    private List<String> dbNames;
+    private java.util.List<String> dbNames;
   }
 }

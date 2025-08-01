@@ -1,10 +1,11 @@
-package io.kestra.plugin.milvus;
+package io.kestra.plugin.milvus.database;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.milvus.MilvusConnection;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.database.request.DescribeDatabaseReq;
 import io.milvus.v2.service.database.response.DescribeDatabaseResp;
@@ -18,7 +19,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @EqualsAndHashCode
 @NoArgsConstructor
-@Schema(title = "This operation change the database in use.")
+@Schema(title = "This operation changes the database in use.")
 @Plugin(
     examples = {
       @Example(
@@ -35,7 +36,7 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: database_use
-                    type: io.kestra.plugin.milvus.DatabaseUse
+                    type: io.kestra.plugin.milvus.database.UseDatabase
                     url: "http://localhost:19530"
                     databaseName: "{{ inputs.database_name }}"
               """),
@@ -53,13 +54,13 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: database_use
-                    type: io.kestra.plugin.milvus.DatabaseUse
+                    type: io.kestra.plugin.milvus.database.UseDatabase
                     url: "https://cluster-id.serverless.cluster-region.cloud.zilliz.com"
                     token: "{{ secret('MILIVUS_API_KEY') }}"
                     databaseName: "{{ inputs.database_name }}"
               """)
     })
-public class DatabaseUse extends MilvusConnection implements RunnableTask<DatabaseUse.Output> {
+public class UseDatabase extends MilvusConnection implements RunnableTask<UseDatabase.Output> {
 
   @Schema(title = "The name of the target database.")
   @PluginProperty(dynamic = true)
@@ -69,17 +70,21 @@ public class DatabaseUse extends MilvusConnection implements RunnableTask<Databa
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
+    try {
+      String renderedDbName = runContext.render(databaseName);
 
-    String renderedDbName = runContext.render(databaseName);
+      DescribeDatabaseResp descDBResp =
+          client.describeDatabase(
+              DescribeDatabaseReq.builder().databaseName(renderedDbName).build());
 
-    DescribeDatabaseResp descDBResp =
-        client.describeDatabase(DescribeDatabaseReq.builder().databaseName(renderedDbName).build());
+      runContext.logger().info("Database {} is being used.", descDBResp.getDatabaseName());
 
-    runContext.logger().info("Database {} is being used.", descDBResp.getDatabaseName());
+      client.useDatabase(renderedDbName);
 
-    client.useDatabase(renderedDbName);
-
-    return Output.builder().success(true).build();
+      return Output.builder().databaseName(renderedDbName).success(true).build();
+    } finally {
+      client.close();
+    }
   }
 
   @Getter
@@ -88,5 +93,8 @@ public class DatabaseUse extends MilvusConnection implements RunnableTask<Databa
 
     @Schema(title = "Indicates whether the database used was successful.")
     private Boolean success;
+
+    @Schema(title = "Output the name of the database.")
+    private String databaseName;
   }
 }

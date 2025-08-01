@@ -1,10 +1,11 @@
-package io.kestra.plugin.milvus;
+package io.kestra.plugin.milvus.database;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.milvus.MilvusConnection;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.database.request.DescribeDatabaseReq;
 import io.milvus.v2.service.database.response.DescribeDatabaseResp;
@@ -47,7 +48,7 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: database_describe
-                    type: io.kestra.plugin.milvus.DatabaseDescribe
+                    type: io.kestra.plugin.milvus.database.DescribeDatabase
                     url: "http://localhost:19530"
                     databaseName: "{{ inputs.database_name }}"
               """),
@@ -65,14 +66,14 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: database_describe
-                    type: io.kestra.plugin.milvus.DatabaseDescribe
+                    type: io.kestra.plugin.milvus.database.DescribeDatabase
                     url: "https://cluster-id.serverless.cluster-region.cloud.zilliz.com"
                     token: "{{ secret('MILIVUS_API_KEY') }}"
                     databaseName: "{{ inputs.database_name }}"
               """)
     })
-public class DatabaseDescribe extends MilvusConnection
-    implements RunnableTask<DatabaseDescribe.Output> {
+public class DescribeDatabase extends MilvusConnection
+    implements RunnableTask<DescribeDatabase.Output> {
 
   @Schema(title = "The name of the database to describe.")
   @PluginProperty(dynamic = true)
@@ -82,16 +83,22 @@ public class DatabaseDescribe extends MilvusConnection
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
+    try {
+      String renderedDatabaseName = runContext.render(databaseName);
 
-    String renderedDatabaseName = runContext.render(databaseName);
+      DescribeDatabaseResp descDBResp =
+          client.describeDatabase(
+              DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
 
-    DescribeDatabaseResp descDBResp =
-        client.describeDatabase(
-            DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
+      runContext.logger().info("Database {} is being described.", descDBResp.getDatabaseName());
 
-    runContext.logger().info("Database {} is being described.", descDBResp.getDatabaseName());
-
-    return Output.builder().properties(descDBResp.getProperties()).build();
+      return Output.builder()
+          .databaseName(descDBResp.getDatabaseName())
+          .properties(descDBResp.getProperties())
+          .build();
+    } finally {
+      client.close();
+    }
   }
 
   @Getter
@@ -101,5 +108,8 @@ public class DatabaseDescribe extends MilvusConnection
     @Schema(
         title = "Output the properties of the database, such as replica number, resource groups.")
     private Map<String, String> properties;
+
+    @Schema(title = "Output the name of the database.")
+    private String databaseName;
   }
 }

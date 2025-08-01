@@ -1,10 +1,11 @@
-package io.kestra.plugin.milvus;
+package io.kestra.plugin.milvus.database;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.milvus.MilvusConnection;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.database.request.DescribeDatabaseReq;
 import io.milvus.v2.service.database.request.DropDatabaseReq;
@@ -45,7 +46,7 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: database_drop
-                    type: io.kestra.plugin.milvus.DatabaseDrop
+                    type: io.kestra.plugin.milvus.database.DropDatabase
                     url: "http://localhost:19530"
                     databaseName: "{{ inputs.database_name }}"
               """),
@@ -63,13 +64,13 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: database_drop
-                    type: io.kestra.plugin.milvus.DatabaseDrop
+                    type: io.kestra.plugin.milvus.database.DropDatabase
                     url: "https://cluster-id.serverless.cluster-region.cloud.zilliz.com"
                     token: "{{ secret('MILIVUS_API_KEY') }}"
                     databaseName: "{{ inputs.database_name }}"
               """)
     })
-public class DatabaseDrop extends MilvusConnection implements RunnableTask<DatabaseDrop.Output> {
+public class DropDatabase extends MilvusConnection implements RunnableTask<DropDatabase.Output> {
 
   @Schema(title = "The name of the database to drop.")
   @PluginProperty(dynamic = true)
@@ -79,33 +80,38 @@ public class DatabaseDrop extends MilvusConnection implements RunnableTask<Datab
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
+    try {
+      String renderedDatabaseName = runContext.render(databaseName);
 
-    String renderedDatabaseName = runContext.render(databaseName);
+      DescribeDatabaseResp descDBResp =
+          client.describeDatabase(
+              DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
 
-    DescribeDatabaseResp descDBResp =
-        client.describeDatabase(
-            DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
+      runContext.logger().info("Database {} is being dropped.", descDBResp.getDatabaseName());
 
-    runContext.logger().info("Database {} is being dropped.", descDBResp.getDatabaseName());
+      DropDatabaseReq dropDatabaseReq =
+          DropDatabaseReq.builder().databaseName(renderedDatabaseName).build();
 
-    DropDatabaseReq dropDatabaseReq =
-        DropDatabaseReq.builder().databaseName(renderedDatabaseName).build();
+      client.dropDatabase(dropDatabaseReq);
 
-    client.dropDatabase(dropDatabaseReq);
+      ListDatabasesResp listDatabasesResp = client.listDatabases();
+      List<String> dbNames = listDatabasesResp.getDatabaseNames();
 
-    ListDatabasesResp listDatabasesResp = client.listDatabases();
-    List<String> dbNames = listDatabasesResp.getDatabaseNames();
+      boolean result =
+          descDBResp.getDatabaseName().equals(renderedDatabaseName)
+              && !dbNames.contains(renderedDatabaseName);
 
-    boolean result =
-        descDBResp.getDatabaseName().equals(renderedDatabaseName)
-            && !dbNames.contains(renderedDatabaseName);
+      runContext
+          .logger()
+          .info(
+              "Database {} has {} been dropped.",
+              descDBResp.getDatabaseName(),
+              result ? "" : "not");
 
-    runContext
-        .logger()
-        .info(
-            "Database {} has {} been dropped.", descDBResp.getDatabaseName(), result ? "" : "not");
-
-    return Output.builder().success(result).build();
+      return Output.builder().success(result).build();
+    } finally {
+      client.close();
+    }
   }
 
   @Getter
