@@ -70,21 +70,17 @@ public class UseDatabase extends MilvusConnection implements RunnableTask<UseDat
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
-    try {
-      String renderedDbName = runContext.render(databaseName);
 
-      DescribeDatabaseResp descDBResp =
-          client.describeDatabase(
-              DescribeDatabaseReq.builder().databaseName(renderedDbName).build());
+    String renderedDbName = runContext.render(databaseName);
 
-      runContext.logger().info("Database {} is being used.", descDBResp.getDatabaseName());
+    DescribeDatabaseResp descDBResp =
+        client.describeDatabase(DescribeDatabaseReq.builder().databaseName(renderedDbName).build());
 
-      client.useDatabase(renderedDbName);
+    runContext.logger().info("Database {} is being used.", descDBResp.getDatabaseName());
 
-      return Output.builder().databaseName(renderedDbName).success(true).build();
-    } finally {
-      client.close();
-    }
+    client.useDatabase(renderedDbName);
+
+    return Output.builder().databaseName(renderedDbName).success(true).build();
   }
 
   @Getter

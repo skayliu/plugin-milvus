@@ -94,41 +94,38 @@ public class AlterDatabaseProperties extends MilvusConnection
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
-    try {
-      String renderedDatabaseName = runContext.render(databaseName);
 
-      Map<String, String> renderedProperties =
-          runContext.render(properties).asMap(String.class, String.class);
+    String renderedDatabaseName = runContext.render(databaseName);
 
-      runContext
-          .logger()
-          .info(
-              "Database {} is being altered with properties: {}.",
-              renderedDatabaseName,
-              JsonUtils.toJson(renderedProperties));
+    Map<String, String> renderedProperties =
+        runContext.render(properties).asMap(String.class, String.class);
 
-      AlterDatabasePropertiesReq alterDatabaseReq =
-          AlterDatabasePropertiesReq.builder()
-              .databaseName(renderedDatabaseName)
-              .properties(renderedProperties)
-              .build();
-      client.alterDatabaseProperties(alterDatabaseReq);
+    runContext
+        .logger()
+        .info(
+            "Database {} is being altered with properties: {}.",
+            renderedDatabaseName,
+            JsonUtils.toJson(renderedProperties));
 
-      DescribeDatabaseResp descDBResp =
-          client.describeDatabase(
-              DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
+    AlterDatabasePropertiesReq alterDatabaseReq =
+        AlterDatabasePropertiesReq.builder()
+            .databaseName(renderedDatabaseName)
+            .properties(renderedProperties)
+            .build();
+    client.alterDatabaseProperties(alterDatabaseReq);
 
-      runContext
-          .logger()
-          .info(
-              "Database {} has been altered, the properties are: {}",
-              descDBResp.getDatabaseName(),
-              descDBResp.getProperties());
+    DescribeDatabaseResp descDBResp =
+        client.describeDatabase(
+            DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
 
-      return Output.builder().success(true).properties(descDBResp.getProperties()).build();
-    } finally {
-      client.close();
-    }
+    runContext
+        .logger()
+        .info(
+            "Database {} has been altered, the properties are: {}",
+            descDBResp.getDatabaseName(),
+            descDBResp.getProperties());
+
+    return Output.builder().success(true).properties(descDBResp.getProperties()).build();
   }
 
   @Getter

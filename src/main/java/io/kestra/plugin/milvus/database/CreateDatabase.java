@@ -89,38 +89,34 @@ public class CreateDatabase extends MilvusConnection
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
-    try {
 
-      String renderedDatabaseName = runContext.render(databaseName);
+    String renderedDatabaseName = runContext.render(databaseName);
 
-      Map<String, String> renderedProperties =
-          runContext.render(properties).asMap(String.class, String.class);
+    Map<String, String> renderedProperties =
+        runContext.render(properties).asMap(String.class, String.class);
 
-      CreateDatabaseReq createDatabaseReq =
-          CreateDatabaseReq.builder()
-              .databaseName(renderedDatabaseName)
-              .properties(renderedProperties)
-              .build();
-
-      client.createDatabase(createDatabaseReq);
-
-      DescribeDatabaseResp descResp =
-          client.describeDatabase(
-              DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
-
-      if (descResp.getDatabaseName().equals(renderedDatabaseName)) {
-        runContext.logger().info("Database {} was created successfully.", renderedDatabaseName);
-        return Output.builder()
-            .databaseName(descResp.getDatabaseName())
-            .properties(descResp.getProperties())
-            .success(true)
+    CreateDatabaseReq createDatabaseReq =
+        CreateDatabaseReq.builder()
+            .databaseName(renderedDatabaseName)
+            .properties(renderedProperties)
             .build();
-      } else {
-        runContext.logger().error("Database {} was create failed.", renderedDatabaseName);
-        return Output.builder().success(false).build();
-      }
-    } finally {
-      client.close();
+
+    client.createDatabase(createDatabaseReq);
+
+    DescribeDatabaseResp descResp =
+        client.describeDatabase(
+            DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
+
+    if (descResp.getDatabaseName().equals(renderedDatabaseName)) {
+      runContext.logger().info("Database {} was created successfully.", renderedDatabaseName);
+      return Output.builder()
+          .databaseName(descResp.getDatabaseName())
+          .properties(descResp.getProperties())
+          .success(true)
+          .build();
+    } else {
+      runContext.logger().error("Database {} was create failed.", renderedDatabaseName);
+      return Output.builder().success(false).build();
     }
   }
 

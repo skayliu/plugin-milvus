@@ -112,38 +112,35 @@ public class DropDatabaseProperties extends MilvusConnection
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
-    try {
-      String renderedDatabaseName = runContext.render(databaseName);
 
-      List<String> renderedPropertyKeys = runContext.render(propertyKeys).asList(String.class);
+    String renderedDatabaseName = runContext.render(databaseName);
 
-      runContext
-          .logger()
-          .info(
-              "Database {} is being reset with properties: {}.",
-              renderedDatabaseName,
-              renderedPropertyKeys);
-      DropDatabasePropertiesReq alterDatabaseReq =
-          DropDatabasePropertiesReq.builder()
-              .databaseName(renderedDatabaseName)
-              .propertyKeys(renderedPropertyKeys)
-              .build();
-      client.dropDatabaseProperties(alterDatabaseReq);
-      DescribeDatabaseResp descDBResp =
-          client.describeDatabase(
-              DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
+    List<String> renderedPropertyKeys = runContext.render(propertyKeys).asList(String.class);
 
-      runContext
-          .logger()
-          .info(
-              "Database {} has been reset, the properties are: {}",
-              descDBResp.getDatabaseName(),
-              descDBResp.getProperties());
+    runContext
+        .logger()
+        .info(
+            "Database {} is being reset with properties: {}.",
+            renderedDatabaseName,
+            renderedPropertyKeys);
+    DropDatabasePropertiesReq alterDatabaseReq =
+        DropDatabasePropertiesReq.builder()
+            .databaseName(renderedDatabaseName)
+            .propertyKeys(renderedPropertyKeys)
+            .build();
+    client.dropDatabaseProperties(alterDatabaseReq);
+    DescribeDatabaseResp descDBResp =
+        client.describeDatabase(
+            DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
 
-      return Output.builder().success(true).properties(descDBResp.getProperties()).build();
-    } finally {
-      client.close();
-    }
+    runContext
+        .logger()
+        .info(
+            "Database {} has been reset, the properties are: {}",
+            descDBResp.getDatabaseName(),
+            descDBResp.getProperties());
+
+    return Output.builder().success(true).properties(descDBResp.getProperties()).build();
   }
 
   @Getter

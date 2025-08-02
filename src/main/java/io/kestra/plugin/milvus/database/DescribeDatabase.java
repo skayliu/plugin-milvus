@@ -83,22 +83,19 @@ public class DescribeDatabase extends MilvusConnection
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
-    try {
-      String renderedDatabaseName = runContext.render(databaseName);
 
-      DescribeDatabaseResp descDBResp =
-          client.describeDatabase(
-              DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
+    String renderedDatabaseName = runContext.render(databaseName);
 
-      runContext.logger().info("Database {} is being described.", descDBResp.getDatabaseName());
+    DescribeDatabaseResp descDBResp =
+        client.describeDatabase(
+            DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
 
-      return Output.builder()
-          .databaseName(descDBResp.getDatabaseName())
-          .properties(descDBResp.getProperties())
-          .build();
-    } finally {
-      client.close();
-    }
+    runContext.logger().info("Database {} is being described.", descDBResp.getDatabaseName());
+
+    return Output.builder()
+        .databaseName(descDBResp.getDatabaseName())
+        .properties(descDBResp.getProperties())
+        .build();
   }
 
   @Getter

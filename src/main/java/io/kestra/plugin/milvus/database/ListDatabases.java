@@ -52,16 +52,13 @@ public class ListDatabases extends MilvusConnection implements RunnableTask<List
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
-    try {
-      ListDatabasesResp listDatabasesResp = client.listDatabases();
-      java.util.List<String> dbNames = listDatabasesResp.getDatabaseNames();
 
-      runContext.logger().info("Database {} is being listed.", dbNames);
+    ListDatabasesResp listDatabasesResp = client.listDatabases();
+    java.util.List<String> dbNames = listDatabasesResp.getDatabaseNames();
 
-      return Output.builder().dbNames(dbNames).build();
-    } finally {
-      client.close();
-    }
+    runContext.logger().info("Database {} is being listed.", dbNames);
+
+    return Output.builder().dbNames(dbNames).build();
   }
 
   @Getter

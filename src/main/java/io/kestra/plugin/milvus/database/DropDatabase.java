@@ -80,38 +80,33 @@ public class DropDatabase extends MilvusConnection implements RunnableTask<DropD
   @Override
   public Output run(RunContext runContext) throws Exception {
     MilvusClientV2 client = connect(runContext);
-    try {
-      String renderedDatabaseName = runContext.render(databaseName);
 
-      DescribeDatabaseResp descDBResp =
-          client.describeDatabase(
-              DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
+    String renderedDatabaseName = runContext.render(databaseName);
 
-      runContext.logger().info("Database {} is being dropped.", descDBResp.getDatabaseName());
+    DescribeDatabaseResp descDBResp =
+        client.describeDatabase(
+            DescribeDatabaseReq.builder().databaseName(renderedDatabaseName).build());
 
-      DropDatabaseReq dropDatabaseReq =
-          DropDatabaseReq.builder().databaseName(renderedDatabaseName).build();
+    runContext.logger().info("Database {} is being dropped.", descDBResp.getDatabaseName());
 
-      client.dropDatabase(dropDatabaseReq);
+    DropDatabaseReq dropDatabaseReq =
+        DropDatabaseReq.builder().databaseName(renderedDatabaseName).build();
 
-      ListDatabasesResp listDatabasesResp = client.listDatabases();
-      List<String> dbNames = listDatabasesResp.getDatabaseNames();
+    client.dropDatabase(dropDatabaseReq);
 
-      boolean result =
-          descDBResp.getDatabaseName().equals(renderedDatabaseName)
-              && !dbNames.contains(renderedDatabaseName);
+    ListDatabasesResp listDatabasesResp = client.listDatabases();
+    List<String> dbNames = listDatabasesResp.getDatabaseNames();
 
-      runContext
-          .logger()
-          .info(
-              "Database {} has {} been dropped.",
-              descDBResp.getDatabaseName(),
-              result ? "" : "not");
+    boolean result =
+        descDBResp.getDatabaseName().equals(renderedDatabaseName)
+            && !dbNames.contains(renderedDatabaseName);
 
-      return Output.builder().success(result).build();
-    } finally {
-      client.close();
-    }
+    runContext
+        .logger()
+        .info(
+            "Database {} has {} been dropped.", descDBResp.getDatabaseName(), result ? "" : "not");
+
+    return Output.builder().success(result).build();
   }
 
   @Getter
