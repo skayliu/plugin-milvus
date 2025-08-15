@@ -8,6 +8,7 @@ import io.kestra.plugin.milvus.MilvusConnection;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.service.database.response.ListDatabasesResp;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -54,7 +55,7 @@ public class ListDatabases extends MilvusConnection implements RunnableTask<List
     MilvusClientV2 client = connect(runContext);
 
     ListDatabasesResp listDatabasesResp = client.listDatabases();
-    java.util.List<String> dbNames = listDatabasesResp.getDatabaseNames();
+    List<String> dbNames = listDatabasesResp.getDatabaseNames();
 
     runContext.logger().info("Database {} is being listed.", dbNames);
 
