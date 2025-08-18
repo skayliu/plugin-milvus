@@ -51,7 +51,7 @@ dependencies {
     compileOnly group: "io.kestra", name: "script", version: kestraVersion
 
     // libs included in the final jar
-    api group: 'io.milvus', name: 'milvus-sdk-java', version: '2.5.11'
+    api group: 'io.milvus', name: 'milvus-sdk-java', version: '2.6.2'
 }
 
 
